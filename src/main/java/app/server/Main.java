@@ -9,7 +9,7 @@ public class Main {
 
 
     public static void main(String[] args) throws Exception {
-        final String SECURITY_POLICY_PATH = "./target/classes/app/server/security.policy";
+        final String SECURITY_POLICY_PATH = "./app/server/security.policy";
         System.setProperty("java.security.policy", SECURITY_POLICY_PATH);
 
         if (System.getSecurityManager() == null) {
