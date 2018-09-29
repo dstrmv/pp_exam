@@ -9,7 +9,9 @@ public interface RemoteServer extends Remote {
 
     String getRootPath() throws RemoteException;
     void addUser(String userName) throws RemoteException;
-    void addSubscriber(Flow.Subscriber<String> subscriber) throws RemoteException;
     boolean containsUser(String userName) throws RemoteException;
-    void addMessage(String s) throws RemoteException;
+    int getChangesLength() throws RemoteException;
+    String getMessage(int num) throws RemoteException;
+    public void addMessage(String message) throws RemoteException;
+
 }

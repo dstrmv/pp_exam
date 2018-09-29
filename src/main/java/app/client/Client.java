@@ -2,8 +2,10 @@ package app.client;
 
 import app.server.RemoteServer;
 
+import java.rmi.RemoteException;
 import java.util.Scanner;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
 
 public class Client implements Runnable {
 
@@ -15,7 +17,6 @@ public class Client implements Runnable {
     private String prompt;
     private String name;
     private ClientConnector connector;
-    private ClientSubscriber subscriber;
     private RemoteServer server;
     private boolean connected;
 
@@ -43,20 +44,39 @@ public class Client implements Runnable {
                 server = connector.connect(address, port, "server");
                 if (!server.containsUser(userName)) {
                     server.addUser(userName);
-                    try {
-                        subscriber = new ClientSubscriber();
-                        server.addSubscriber(this.subscriber);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        System.out.println("wtf");
-                    }
+
                 } else {
                     throw new Exception("user already added");
                 }
+
                 currentPath = server.getRootPath();
                 prompt = currentPath + ">";
                 connected = true;
 
+                Thread changesListener = new Thread(() -> {
+                    try {
+                        int currentMsgNum = server.getChangesLength();
+                        int actualMsgNum;
+                        while (connected) {
+                            actualMsgNum = server.getChangesLength();
+                            if (actualMsgNum - currentMsgNum > 0) {
+                                System.out.println(server.getMessage(currentMsgNum++));
+                            } else {
+                                try {
+                                    TimeUnit.SECONDS.sleep(1);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+
+                    } catch (RemoteException e) {
+                        System.out.println("something is wrong");
+                    }
+                });
+
+                //changesListener.setDaemon(true);
+                changesListener.start();
 
             } catch (Exception e) {
                 System.out.println("Connection failed.");
@@ -72,7 +92,7 @@ public class Client implements Runnable {
 
             executeCommand(command);
             try {
-                server.addMessage("Command executed\n");
+                server.addMessage("Command executed");
             } catch (Exception e) {
             }
         }

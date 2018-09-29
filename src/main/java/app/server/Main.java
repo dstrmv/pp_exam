@@ -4,10 +4,6 @@ import java.rmi.Remote;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.SubmissionPublisher;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -17,12 +13,6 @@ public class Main {
         Registry registry = LocateRegistry.createRegistry(2099);
         Remote stub = UnicastRemoteObject.exportObject(server, 0);
         registry.bind(name, stub);
-
-
-
-
-
-
         Thread.sleep(Integer.MAX_VALUE);
     }
 }
