@@ -3,6 +3,7 @@ package app.client;
 import app.server.RemoteServer;
 
 import java.util.Scanner;
+import java.util.concurrent.Flow;
 
 public class Client implements Runnable {
 
@@ -14,6 +15,7 @@ public class Client implements Runnable {
     private String prompt;
     private String name;
     private ClientConnector connector;
+    private ClientSubscriber subscriber;
     private RemoteServer server;
     private boolean connected;
 
@@ -23,7 +25,6 @@ public class Client implements Runnable {
     }
 
     public void run() {
-
 
         connector = new ClientConnector();
         Scanner input = new Scanner(System.in);
@@ -42,6 +43,13 @@ public class Client implements Runnable {
                 server = connector.connect(address, port, "server");
                 if (!server.containsUser(userName)) {
                     server.addUser(userName);
+                    try {
+                        subscriber = new ClientSubscriber();
+                        server.addSubscriber(this.subscriber);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        System.out.println("wtf");
+                    }
                 } else {
                     throw new Exception("user already added");
                 }
@@ -49,8 +57,10 @@ public class Client implements Runnable {
                 prompt = currentPath + ">";
                 connected = true;
 
+
             } catch (Exception e) {
                 System.out.println("Connection failed.");
+                e.printStackTrace();
                 connected = false;
             }
         }
@@ -61,14 +71,15 @@ public class Client implements Runnable {
             command = input.nextLine();
 
             executeCommand(command);
+            try {
+                server.addMessage("Command executed\n");
+            } catch (Exception e) {
+            }
         }
 
     }
 
     private void executeCommand(String command) {
-
-
-
     }
 
 
