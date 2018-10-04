@@ -20,7 +20,7 @@ public class Client implements Runnable {
     private RemoteServer server;
     private boolean connected;
 
-    public Client() {
+    Client() {
         currentPath = NO_PATH;
         name = NO_NAME;
     }
@@ -28,9 +28,9 @@ public class Client implements Runnable {
     public void run() {
 
         connector = new ClientConnector();
-        Scanner input = new Scanner(System.in);
+        Scanner in = new Scanner(System.in);
         while (!connected) {
-            String connectionInputMessage = input.nextLine();
+            String connectionInputMessage = in.nextLine();
             String[] args = connectionInputMessage.split(" ");
 
 
@@ -75,7 +75,7 @@ public class Client implements Runnable {
                     }
                 });
 
-                //changesListener.setDaemon(true);
+                changesListener.setDaemon(true);
                 changesListener.start();
 
             } catch (Exception e) {
@@ -88,12 +88,13 @@ public class Client implements Runnable {
         String command;
         while (connected) {
             System.out.print(prompt);
-            command = input.nextLine();
-
-            executeCommand(command);
+            String input = in.nextLine();
+            String[] commands = Parser.parse(input);
             try {
                 server.addMessage("Command executed");
             } catch (Exception e) {
+                System.out.println("something happened");
+                e.printStackTrace();
             }
         }
 
