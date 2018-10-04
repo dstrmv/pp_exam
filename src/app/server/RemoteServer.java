@@ -2,8 +2,6 @@ package app.server;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.concurrent.Flow;
-import java.util.concurrent.Flow.Subscriber;
 
 public interface RemoteServer extends Remote {
 

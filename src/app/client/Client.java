@@ -4,7 +4,7 @@ import app.server.RemoteServer;
 
 import java.rmi.RemoteException;
 import java.util.Scanner;
-import java.util.concurrent.Flow;
+//import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
 public class Client implements Runnable {
