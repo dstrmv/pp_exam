@@ -31,8 +31,7 @@ public class Client implements Runnable {
         Scanner in = new Scanner(System.in);
         while (!connected) {
             String connectionInputMessage = in.nextLine();
-            String[] args = connectionInputMessage.split(" ");
-
+            String[] args = Parser.parse(connectionInputMessage);
 
             String command = args[0];
             String[] addressPort = args[1].split(":");

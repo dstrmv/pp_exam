@@ -1,6 +1,10 @@
 package app.server;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,5 +44,55 @@ public class RemoteServerImpl implements RemoteServer {
     @Override
     public synchronized void addMessage(String message) throws RemoteException{
         this.changesList.add(message);
+    }
+
+    @Override
+    public void copy(String fromPath, String toPath) throws RemoteException {
+        try {
+            Files.copy(Paths.get(fromPath), Paths.get(toPath));
+        } catch (IOException e) {
+
+        }
+    }
+
+    @Override
+    public boolean isDirectoryExist(String path) throws RemoteException {
+
+        return !Files.notExists(Paths.get(path));
+    }
+
+    @Override
+    public void makeDirectory(String path) throws RemoteException {
+        try {
+            Files.createDirectory(Paths.get(path));
+        } catch (IOException e) {
+            throw new RemoteException("IOException in md method", e);
+        }
+    }
+
+    @Override
+    public void block(String path, String username) throws RemoteException {
+
+
+    }
+
+    @Override
+    public void unblock(String path, String user) throws RemoteException {
+
+    }
+
+    @Override
+    public boolean isBlocked(String path) throws RemoteException {
+        return false;
+    }
+
+    @Override
+    public String[] blockedBy(String path) throws RemoteException {
+        return new String[0];
+    }
+
+    @Override
+    public void removeDirectory(String path, boolean isRecursive) throws RemoteException {
+
     }
 }
