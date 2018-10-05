@@ -1,6 +1,6 @@
-package app.client;
+package com.app.client;
 
-import app.server.RemoteServer;
+import com.app.server.RemoteServer;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;

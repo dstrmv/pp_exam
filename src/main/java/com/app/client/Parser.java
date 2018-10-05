@@ -1,7 +1,6 @@
-package app.client;
+package com.app.client;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 class Parser {

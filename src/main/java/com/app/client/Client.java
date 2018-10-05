@@ -1,10 +1,9 @@
-package app.client;
+package com.app.client;
 
-import app.server.RemoteServer;
+import com.app.server.RemoteServer;
 
 import java.rmi.RemoteException;
 import java.util.Scanner;
-//import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
 public class Client implements Runnable {
@@ -31,7 +30,7 @@ public class Client implements Runnable {
         Scanner in = new Scanner(System.in);
         while (!connected) {
             String connectionInputMessage = in.nextLine();
-            String[] args = Parser.parse(connectionInputMessage);
+            String[] args = com.app.client.Parser.parse(connectionInputMessage);
 
             String command = args[0];
             String[] addressPort = args[1].split(":");
@@ -88,7 +87,7 @@ public class Client implements Runnable {
         while (connected) {
             System.out.print(prompt);
             String input = in.nextLine();
-            String[] commands = Parser.parse(input);
+            String[] commands = com.app.client.Parser.parse(input);
             try {
                 server.addMessage("Command executed");
             } catch (Exception e) {
