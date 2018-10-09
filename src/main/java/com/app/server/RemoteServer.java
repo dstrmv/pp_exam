@@ -31,7 +31,8 @@ public interface RemoteServer extends Remote {
 
     String[] blockedBy(String path) throws RemoteException;
 
-    void removeDirectory(String path, boolean isRecursive) throws RemoteException;
+    void removeDirectory(String path) throws RemoteException;
 
+    String getDelimiter() throws RemoteException;
 
 }
