@@ -117,8 +117,6 @@ public class RemoteServerImpl implements RemoteServer {
                 e.printStackTrace();
             }
         }
-
-
     }
 
     @Override
@@ -140,7 +138,7 @@ public class RemoteServerImpl implements RemoteServer {
     @Override
     public String[] blockedBy(String path) throws RemoteException {
         Path path1 = Paths.get(path);
-        String[] blockedBy = { };
+        String[] blockedBy = {};
         try {
             blockedBy = (String[]) Files.getAttribute(path1, "user:blockedBy");
         } catch (IOException e) {
@@ -152,6 +150,7 @@ public class RemoteServerImpl implements RemoteServer {
     @Override
     public void removeDirectory(String path) throws RemoteException {
 
+
     }
 
     @Override
@@ -159,5 +158,74 @@ public class RemoteServerImpl implements RemoteServer {
         return File.separator;
     }
 
+    @Override
+    public void removeDirectoryRecursive(String path) throws RemoteException {
 
+    }
+
+    @Override
+    public void removeFile(String path) throws RemoteException {
+
+    }
+
+    @Override
+    public void makeFile(String path) throws RemoteException {
+        try {
+            Files.createFile(Paths.get(path));
+        } catch (IOException e) {
+            throw new RemoteException("IOException");
+        }
+    }
+
+    @Override
+    public String getFilesTree(String path) throws RemoteException {
+        File folder = Paths.get(path).toFile();
+        if (!folder.isDirectory()) {
+            throw new RemoteException("file is not a directory");
+        }
+        int indent = 0;
+        StringBuilder sb = new StringBuilder();
+        printDirectoryTree(folder, indent, sb);
+        return sb.toString();
+    }
+
+    private void printDirectoryTree(File folder, int indent, StringBuilder sb) throws RemoteException {
+        if (!folder.isDirectory()) {
+            throw new IllegalArgumentException("file is not a Directory");
+        }
+        sb.append(getIndentString(indent));
+        sb.append("-");
+        sb.append(folder.getName());
+        sb.append(File.separator);
+        if (isBlocked(folder.getPath())) {
+            sb.append(" ").append("LOCKED BY: ").append(Arrays.toString(this.blockedBy(folder.getPath())));
+        }
+        sb.append("\n");
+        for (File file : folder.listFiles()) {
+            if (file.isDirectory()) {
+                printDirectoryTree(file, indent + 1, sb);
+            } else {
+                printFile(file, indent + 1, sb);
+            }
+        }
+    }
+
+    private void printFile(File file, int indent, StringBuilder sb) throws RemoteException {
+        sb.append(getIndentString(indent));
+        sb.append("-");
+        sb.append(file.getName());
+        if (isBlocked(file.getPath())) {
+            sb.append(" ").append("LOCKED BY: ").append(Arrays.toString(this.blockedBy(file.getPath())));
+        }
+        sb.append("\n");
+    }
+
+    private static String getIndentString(int indent) {
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < indent; i++) {
+            sb.append("|");
+        }
+        return sb.toString();
+    }
 }

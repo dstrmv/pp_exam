@@ -10,13 +10,13 @@ public class Client implements Runnable {
 
     private static final String NO_PATH = "";
     private static final String NO_NAME = "";
-    private static final String[] CLIENT_COMMANDS = {"cd",};
 
     private String currentPath;
     private String prompt;
     private String name;
     private ClientConnector connector;
     private RemoteServer server;
+    private CommandExecutor executor;
     private boolean connected;
 
     Client() {
@@ -30,7 +30,7 @@ public class Client implements Runnable {
         Scanner in = new Scanner(System.in);
         while (!connected) {
             String connectionInputMessage = in.nextLine();
-            String[] args = com.app.client.Parser.parse(connectionInputMessage);
+            String[] args = Parser.parse(connectionInputMessage);
 
             String command = args[0];
             String[] addressPort = args[1].split(":");
@@ -81,25 +81,20 @@ public class Client implements Runnable {
                 e.printStackTrace();
                 connected = false;
             }
-        }
 
-        String command;
-        while (connected) {
-            System.out.print(prompt);
-            String input = in.nextLine();
-            String[] commands = com.app.client.Parser.parse(input);
-            try {
-                server.addMessage("Command executed");
-            } catch (Exception e) {
-                System.out.println("something happened");
-                e.printStackTrace();
+            CommandExecutor executor = new CommandExecutor(server);
+            while (connected) {
+                System.out.print(prompt);
+                String input = in.nextLine();
+                String[] commands = Parser.parse(input);
+                try {
+                    executor.setCurrentPath(currentPath);
+                    executor.execute(commands);
+                } catch (Exception e) {
+                    System.out.println("something happened");
+                    e.printStackTrace();
+                }
             }
         }
-
     }
-
-    private void executeCommand(String command) {
-    }
-
-
 }
