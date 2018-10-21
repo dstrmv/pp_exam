@@ -2,6 +2,7 @@ package com.app.client;
 
 import com.app.server.RemoteServer;
 
+import java.io.FileNotFoundException;
 import java.rmi.RemoteException;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -58,7 +59,7 @@ public class Client implements Runnable {
                         while (connected) {
                             actualMsgNum = server.getChangesLength();
                             if (actualMsgNum - currentMsgNum > 0) {
-                                System.out.println(server.getMessage(currentMsgNum++));
+                                System.out.println("\n" + server.getMessage(currentMsgNum++));
                             } else {
                                 try {
                                     TimeUnit.SECONDS.sleep(1);
@@ -81,17 +82,16 @@ public class Client implements Runnable {
                 e.printStackTrace();
                 connected = false;
             }
-
             CommandExecutor executor = new CommandExecutor(server);
+            executor.setCurrentPath(currentPath);
             while (connected) {
                 System.out.print(prompt);
                 String input = in.nextLine();
                 String[] commands = Parser.parse(input);
                 try {
-                    executor.setCurrentPath(currentPath);
-                    executor.execute(commands);
-                } catch (Exception e) {
-                    System.out.println("something happened");
+                    currentPath = executor.execute(commands, userName);
+                    prompt = currentPath + ">";
+                } catch (RemoteException e) {
                     e.printStackTrace();
                 }
             }

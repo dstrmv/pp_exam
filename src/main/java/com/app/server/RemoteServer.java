@@ -36,7 +36,7 @@ public interface RemoteServer extends Remote {
     String[] blockedBy(String path) throws RemoteException;
 
     // rd
-    void removeDirectory(String path) throws RemoteException;
+    boolean removeDirectory(String path) throws RemoteException;
 
     //deltree
     void removeDirectoryRecursive(String path) throws RemoteException;
@@ -52,5 +52,5 @@ public interface RemoteServer extends Remote {
     // print
     String getFilesTree(String path) throws RemoteException;
 
-
+    String[] getRoots() throws RemoteException;
 }

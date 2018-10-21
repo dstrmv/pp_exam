@@ -16,6 +16,15 @@ public class RemoteServerImpl implements RemoteServer {
     private List<String> userNamesList = Collections.synchronizedList(new ArrayList<>());
     private List<String> changesList = Collections.synchronizedList(new ArrayList<>());
 
+    private static String getIndentString(int indent) {
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < indent; i++) {
+            sb.append("-");
+        }
+        return sb.toString();
+    }
+
     @Override
     public String getRootPath() throws RemoteException {
         //return FileSystemView.getFileSystemView().getRoots()[0].getPath().toString();
@@ -129,7 +138,7 @@ public class RemoteServerImpl implements RemoteServer {
             blocked = (boolean) Files.getAttribute(path1, "user:blocked");
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (IllegalArgumentException | UnsupportedOperationException e) {
+        } catch (Exception e) {
             blocked = false;
         }
         return blocked;
@@ -148,9 +157,23 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public void removeDirectory(String path) throws RemoteException {
+    public boolean removeDirectory(String path) throws RemoteException {
 
-
+        Path path1 = Paths.get(path);
+        if (Files.exists(path1) && Files.isDirectory(path1)) {
+            if (!isBlocked(path)) {
+                if (path1.toFile().list() == null || path1.toFile().list().length == 0) {
+                    try {
+                        Files.delete(path1);
+                        return true;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return false;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -220,12 +243,7 @@ public class RemoteServerImpl implements RemoteServer {
         sb.append("\n");
     }
 
-    private static String getIndentString(int indent) {
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < indent; i++) {
-            sb.append("|");
-        }
-        return sb.toString();
+    public String[] getRoots() {
+        return Arrays.stream(File.listRoots()).map(File::getAbsolutePath).toArray(String[]::new);
     }
 }
