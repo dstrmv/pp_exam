@@ -8,7 +8,7 @@ import java.util.Arrays;
 
 public class CommandExecutor {
 
-    private static final String[] COMMANDS = {"cd", "md", "rd", "deltree", "mf", "del", "lock", "unlock", "move", "print", "blockinfo"};
+    private static final String[] COMMANDS = {"cd", "md", "rd", "deltree", "mf", "del", "lock", "unlock", "copy", "print", "blockinfo", "dir"};
     private String[] listRoots = {""};
 
     private String currentPath;
@@ -79,12 +79,51 @@ public class CommandExecutor {
                     return currentPath;
                 }
 
+                if (server.isBlocked(newPath)) {
+                    System.out.println("can't delete: blocked directory");
+                    return currentPath;
+                }
+
                 boolean removed = server.removeDirectory(newPath);
                 if (removed) {
                     server.addMessage(String.format("directory \"%s\" deleted by user %s", newPath, userName));
                 }
                 return currentPath;
             }
+            case "dir": {
+                if (commands.length != 1) {
+                    System.out.println("wrong arguments");
+                    return currentPath;
+                }
+
+                Arrays.stream(server.getFilesInDirectory(currentPath))
+                        .sorted()
+                        .forEachOrdered(System.out::println);
+                return currentPath;
+            }
+            case "copy": {
+
+                if (commands.length != 3) {
+                    System.out.println("wrong arguments. try to put arguments in \"\"");
+                    return currentPath;
+                }
+
+                server.copy(commands[1], commands[2]);
+                return currentPath;
+            }
+            case "block": {
+                if (commands.length < 2) {
+                    System.out.println("wrong arguments");
+                    return currentPath;
+                }
+
+                String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
+                newPath = combinePaths(currentPath, newPath);
+
+                server.block(newPath, userName);
+                server.addMessage(String.format("file \"%s\" is blocked by %s", newPath, userName));
+            }
+
 
         }
         return currentPath;
@@ -93,7 +132,11 @@ public class CommandExecutor {
     private String combinePaths(String currentPath, String newPath) {
         String combined = newPath;
         if (Arrays.stream(listRoots).noneMatch(newPath::startsWith)) {
-            combined = currentPath + "\\" + newPath;
+            try {
+                combined = currentPath + server.getDelimiter() + newPath;
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
 
         combined = Paths.get(combined).normalize().toString();

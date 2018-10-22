@@ -53,4 +53,7 @@ public interface RemoteServer extends Remote {
     String getFilesTree(String path) throws RemoteException;
 
     String[] getRoots() throws RemoteException;
+
+    //dir
+    String[] getFilesInDirectory(String path) throws RemoteException;
 }

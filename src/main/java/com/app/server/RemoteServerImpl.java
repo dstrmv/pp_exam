@@ -6,10 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class RemoteServerImpl implements RemoteServer {
 
@@ -162,7 +159,7 @@ public class RemoteServerImpl implements RemoteServer {
         Path path1 = Paths.get(path);
         if (Files.exists(path1) && Files.isDirectory(path1)) {
             if (!isBlocked(path)) {
-                if (path1.toFile().list() == null || path1.toFile().list().length == 0) {
+                if (Objects.requireNonNull(path1.toFile().list()).length == 0) {
                     try {
                         Files.delete(path1);
                         return true;
@@ -244,6 +241,14 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     public String[] getRoots() {
-        return Arrays.stream(File.listRoots()).map(File::getAbsolutePath).toArray(String[]::new);
+        return Arrays.stream(File.listRoots())
+                .map(File::getAbsolutePath)
+                .toArray(String[]::new);
+    }
+
+    @Override
+    public String[] getFilesInDirectory(String path) throws RemoteException {
+        Path path1 = Paths.get(path);
+        return path1.toFile().list();
     }
 }
