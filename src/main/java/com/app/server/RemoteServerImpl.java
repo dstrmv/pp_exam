@@ -1,15 +1,20 @@
 package com.app.server;
 
+import org.apache.commons.io.FileUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.rmi.RemoteException;
 import java.util.*;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class RemoteServerImpl implements RemoteServer {
 
@@ -37,6 +42,11 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
+    public void removeUser(String userName) throws RemoteException {
+        this.userNamesList.remove(userName);
+    }
+
+    @Override
     public boolean containsUser(String userName) throws RemoteException {
         return this.userNamesList.contains(userName);
     }
@@ -58,10 +68,35 @@ public class RemoteServerImpl implements RemoteServer {
 
     @Override
     public void copy(String fromPath, String toPath) throws RemoteException {
-        try {
-            Files.copy(Paths.get(fromPath), Paths.get(toPath));
-        } catch (IOException e) {
+        File from = Paths.get(fromPath).toFile();
+        File to = Paths.get(toPath).toFile();
 
+        try {
+            if (from.isDirectory()) {
+                FileUtils.copyDirectoryToDirectory(from, to);
+            } else {
+                FileUtils.copyFileToDirectory(from, to);
+            }
+
+        } catch (IOException e) {
+            throw new RemoteException("1", e);
+        }
+    }
+
+    @Override
+    public void move(String fromPath, String toPath) throws RemoteException {
+        File from = Paths.get(fromPath).toFile();
+        File to = Paths.get(toPath).toFile();
+
+        try {
+            if (from.isDirectory()) {
+                FileUtils.moveDirectoryToDirectory(from, to, true);
+            } else {
+                FileUtils.moveFileToDirectory(from, to, true);
+            }
+
+        } catch (IOException e) {
+            throw new RemoteException("1", e);
         }
     }
 
@@ -81,12 +116,12 @@ public class RemoteServerImpl implements RemoteServer {
 
     //TODO
     @Override
-    public void block(String path, String username) throws RemoteException {
+    public void block(Path path, String username) throws RemoteException {
 
-        Path path1 = Paths.get(path);
         boolean blocked = isBlocked(path);
 
-
+        UserDefinedFileAttributeView view =
+                Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
 
         if (blocked) {
             try {
@@ -97,14 +132,17 @@ public class RemoteServerImpl implements RemoteServer {
                 String[] newBlockedBy = new String[blockedBy.length + 1];
                 System.arraycopy(blockedBy, 0, newBlockedBy, 0, blockedBy.length);
                 newBlockedBy[newBlockedBy.length - 1] = username;
-                Files.setAttribute(path1, "user:blockedby", newBlockedBy);
+                String newBlockedByStr = Arrays.stream(newBlockedBy).reduce((x, y) -> x + ";" + y).get();
+                view.delete("user.blockedBy");
+                view.write("user.blockedBy", Charset.defaultCharset().encode(newBlockedByStr));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         } else {
             try {
-                Files.setAttribute(path1, "user:blocked", true);
-                Files.setAttribute(path1, "user:blockedBy", new String[]{username});
+                view.write("user.blocked", Charset.defaultCharset().encode("true"));
+                view.write("user.blockedBy", Charset.defaultCharset().encode(username));
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -112,12 +150,14 @@ public class RemoteServerImpl implements RemoteServer {
 
     }
 
-    //TODO VOT ETO
+    //TODO Test
     @Override
-    public void unblock(String path, String user) throws RemoteException {
+    public void unblock(Path path, String user) throws RemoteException {
 
-        Path path1 = Paths.get(path);
         boolean blocked = isBlocked(path);
+
+        UserDefinedFileAttributeView view =
+                Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
 
         if (blocked) {
             try {
@@ -125,9 +165,14 @@ public class RemoteServerImpl implements RemoteServer {
                 String[] newBlockedBy = Arrays.stream(blockedBy).filter(userattr -> !user.equals(userattr)).toArray(String[]::new);
 
                 if (newBlockedBy.length == 0) {
-                    Files.setAttribute(path1, "user:blocked", false);
+                    view.delete("user.blockedBy");
+                    view.delete("user.blocked");
+                    return;
                 }
-                Files.setAttribute(path1, "user:blockedby", newBlockedBy);
+
+                String newBlockedByString = Arrays.stream(newBlockedBy).reduce((x, y) -> x + ";" + y).get();
+                view.delete("ser.blockedBy");
+                view.write("user.blockedBy", Charset.defaultCharset().encode(newBlockedByString));
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -136,18 +181,16 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public boolean isBlocked(String path) throws RemoteException {
+    public boolean isBlocked(Path path) throws RemoteException {
 
-        Path path1 = Paths.get(path);
         boolean blocked = false;
-
         String name = "user.blocked";
 
         UserDefinedFileAttributeView view =
-                Files.getFileAttributeView(path1, UserDefinedFileAttributeView.class);
+                Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
         try {
 
-            if (view.list().isEmpty()) {
+            if (!view.list().contains("user.blocked")) {
                 return false;
             }
 
@@ -159,26 +202,21 @@ public class RemoteServerImpl implements RemoteServer {
                 blocked = true;
             }
         } catch (IOException e) {
-            throw new RemoteException();
+            throw new RemoteException("123", e);
         }
 
         return blocked;
     }
 
-
     @Override
-    public String[] blockedBy(String path) throws RemoteException {
-        Path path1 = Paths.get(path);
+    public String[] blockedBy(Path path) throws RemoteException {
+
         String[] blockedBy = {};
 
         String name = "user.blockedBy";
 
         UserDefinedFileAttributeView view =
-                Files.getFileAttributeView(path1, UserDefinedFileAttributeView.class);
-
-        if (!isBlocked(path)) {
-            return blockedBy;
-        }
+                Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
 
         try {
             ByteBuffer buffer = ByteBuffer.allocate(view.size(name));
@@ -194,14 +232,13 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public boolean removeDirectory(String path) throws RemoteException {
+    public boolean removeDirectory(Path path) throws RemoteException {
 
-        Path path1 = Paths.get(path);
-        if (Files.exists(path1) && Files.isDirectory(path1)) {
+        if (Files.exists(path) && Files.isDirectory(path)) {
             if (!isBlocked(path)) {
-                if (Objects.requireNonNull(path1.toFile().list()).length == 0) {
+                if (path.toFile().list().length == 0) {
                     try {
-                        Files.delete(path1);
+                        Files.delete(path);
                         return true;
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -219,19 +256,33 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public void removeDirectoryRecursive(String path) throws RemoteException {
+    public boolean removeDirectoryRecursive(Path path) throws RemoteException {
+
+        if (Files.exists(path) && Files.isDirectory(path)) {
+            if (!isBlocked(path)) {
+                if (path.toFile().list().length == 0) {
+                    try {
+                        FileUtils.deleteDirectory(path.toFile());
+                        return true;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return false;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void removeFile(Path path) throws RemoteException {
 
     }
 
     @Override
-    public void removeFile(String path) throws RemoteException {
-
-    }
-
-    @Override
-    public void makeFile(String path) throws RemoteException {
+    public void makeFile(Path path) throws RemoteException {
         try {
-            Files.createFile(Paths.get(path));
+            Files.createFile(path);
         } catch (IOException e) {
             throw new RemoteException("IOException");
         }
@@ -257,8 +308,8 @@ public class RemoteServerImpl implements RemoteServer {
         sb.append("-");
         sb.append(folder.getName());
         sb.append(File.separator);
-        if (isBlocked(folder.getPath())) {
-            sb.append(" ").append("LOCKED BY: ").append(Arrays.toString(this.blockedBy(folder.getPath())));
+        if (isBlocked(folder.toPath())) {
+            sb.append(" ").append("LOCKED BY: ").append(Arrays.toString(this.blockedBy(folder.toPath())));
         }
         sb.append("\n");
         for (File file : folder.listFiles()) {
@@ -274,8 +325,8 @@ public class RemoteServerImpl implements RemoteServer {
         sb.append(getIndentString(indent));
         sb.append("-");
         sb.append(file.getName());
-        if (isBlocked(file.getPath())) {
-            sb.append(" ").append("LOCKED BY: ").append(Arrays.toString(this.blockedBy(file.getPath())));
+        if (isBlocked(file.toPath())) {
+            sb.append(" ").append("LOCKED BY: ").append(Arrays.toString(this.blockedBy(file.toPath())));
         }
         sb.append("\n");
     }

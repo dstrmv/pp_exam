@@ -42,11 +42,11 @@ public class Client implements Runnable {
             String userName = args[2];
 
             if (!userName.matches("[a-zA-Z]+")) {
-                System.out.println("username must be only english letters");
+                System.out.println("username must contain only english letters");
                 continue;
             }
 
-            if (!command.toLowerCase().equals("connect") || !command.toLowerCase().equals("quit")) {
+            if (!command.toLowerCase().equals("connect") && !command.toLowerCase().equals("quit")) {
                 System.out.println("pls connect at first");
             }
 
@@ -62,6 +62,14 @@ public class Client implements Runnable {
                 } else {
                     throw new Exception("user already added");
                 }
+
+                Runtime.getRuntime().addShutdownHook(new Thread( () -> {
+                    try {
+                        server.removeUser(userName);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }));
 
                 currentPath = server.getRootPath();
                 prompt = currentPath + ">";

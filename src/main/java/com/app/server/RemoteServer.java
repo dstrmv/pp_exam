@@ -1,5 +1,6 @@
 package com.app.server;
 
+import java.nio.file.Path;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -20,32 +21,34 @@ public interface RemoteServer extends Remote {
     // move
     void copy(String fromPath, String toPath) throws RemoteException;
 
+    void move(String fromPath, String toPath) throws RemoteException;
+
     boolean isDirectoryExist(String path) throws RemoteException;
 
     // md
     void makeDirectory(String path) throws RemoteException;
 
     // lock
-    void block(String path, String username) throws RemoteException;
+    void block(Path path, String username) throws RemoteException;
 
     //unlock
-    void unblock(String path, String user) throws RemoteException;
+    void unblock(Path path, String user) throws RemoteException;
 
-    boolean isBlocked(String path) throws RemoteException;
+    boolean isBlocked(Path path) throws RemoteException;
 
-    String[] blockedBy(String path) throws RemoteException;
+    String[] blockedBy(Path path) throws RemoteException;
 
     // rd
-    boolean removeDirectory(String path) throws RemoteException;
+    boolean removeDirectory(Path path) throws RemoteException;
 
     //deltree
-    void removeDirectoryRecursive(String path) throws RemoteException;
+    boolean removeDirectoryRecursive(Path path) throws RemoteException;
 
     // del
-    void removeFile(String path) throws RemoteException;
+    void removeFile(Path path) throws RemoteException;
 
     // mf
-    void makeFile(String path) throws RemoteException;
+    void makeFile(Path path) throws RemoteException;
 
     String getDelimiter() throws RemoteException;
 
@@ -56,4 +59,6 @@ public interface RemoteServer extends Remote {
 
     //dir
     String[] getFilesInDirectory(String path) throws RemoteException;
+
+    void removeUser(String userName) throws RemoteException;
 }
