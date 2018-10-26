@@ -12,6 +12,7 @@ public class Client implements Runnable {
     private static final String NO_PATH = "";
     private static final String NO_NAME = "";
 
+
     private String currentPath;
     private String prompt;
     private String name;
@@ -30,6 +31,7 @@ public class Client implements Runnable {
         connector = new ClientConnector();
         Scanner in = new Scanner(System.in);
         while (!connected) {
+
             String connectionInputMessage = in.nextLine();
             String[] args = Parser.parse(connectionInputMessage);
 
@@ -38,6 +40,19 @@ public class Client implements Runnable {
             String address = addressPort[0];
             int port = Integer.parseInt(addressPort[1]);
             String userName = args[2];
+
+            if (!userName.matches("[a-zA-Z]+")) {
+                System.out.println("username must be only english letters");
+                continue;
+            }
+
+            if (!command.toLowerCase().equals("connect") || !command.toLowerCase().equals("quit")) {
+                System.out.println("pls connect at first");
+            }
+
+            if (command.toLowerCase().equals("quit")) {
+                System.exit(0);
+            }
 
             try {
                 server = connector.connect(address, port, "server");

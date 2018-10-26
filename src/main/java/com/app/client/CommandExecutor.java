@@ -8,7 +8,7 @@ import java.util.Arrays;
 
 public class CommandExecutor {
 
-    private static final String[] COMMANDS = {"cd", "md", "rd", "deltree", "mf", "del", "lock", "unlock", "copy", "print", "blockinfo", "dir"};
+    static final String[] COMMANDS = {"cd", "md", "rd", "deltree", "mf", "del", "lock", "unlock", "copy", "move", "print", "blockinfo", "dir"};
     private String[] listRoots = {""};
 
     private String currentPath;
@@ -32,7 +32,7 @@ public class CommandExecutor {
     }
 
     public String execute(String[] commands, String userName) throws RemoteException {
-        switch (commands[0]) {
+        switch (commands[0].toLowerCase()) {
             case "cd": {
                 if (commands.length == 1) {
                     System.out.println(currentPath);

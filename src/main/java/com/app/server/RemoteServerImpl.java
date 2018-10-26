@@ -2,9 +2,12 @@ package com.app.server;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.rmi.RemoteException;
 import java.util.*;
 
@@ -76,15 +79,21 @@ public class RemoteServerImpl implements RemoteServer {
         }
     }
 
+    //TODO
     @Override
     public void block(String path, String username) throws RemoteException {
 
         Path path1 = Paths.get(path);
         boolean blocked = isBlocked(path);
 
+
+
         if (blocked) {
             try {
                 String[] blockedBy = blockedBy(path);
+                if (Arrays.asList(blockedBy).contains(username)) {
+                    return;
+                }
                 String[] newBlockedBy = new String[blockedBy.length + 1];
                 System.arraycopy(blockedBy, 0, newBlockedBy, 0, blockedBy.length);
                 newBlockedBy[newBlockedBy.length - 1] = username;
@@ -103,6 +112,7 @@ public class RemoteServerImpl implements RemoteServer {
 
     }
 
+    //TODO VOT ETO
     @Override
     public void unblock(String path, String user) throws RemoteException {
 
@@ -131,22 +141,52 @@ public class RemoteServerImpl implements RemoteServer {
         Path path1 = Paths.get(path);
         boolean blocked = false;
 
+        String name = "user.blocked";
+
+        UserDefinedFileAttributeView view =
+                Files.getFileAttributeView(path1, UserDefinedFileAttributeView.class);
         try {
-            blocked = (boolean) Files.getAttribute(path1, "user:blocked");
+
+            if (view.list().isEmpty()) {
+                return false;
+            }
+
+            ByteBuffer buffer = ByteBuffer.allocate(view.size(name));
+            view.read(name, buffer);
+            buffer.flip();
+            String value = Charset.defaultCharset().decode(buffer).toString();
+            if (value.equals("true")) {
+                blocked = true;
+            }
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            blocked = false;
+            throw new RemoteException();
         }
+
         return blocked;
     }
+
 
     @Override
     public String[] blockedBy(String path) throws RemoteException {
         Path path1 = Paths.get(path);
         String[] blockedBy = {};
+
+        String name = "user.blockedBy";
+
+        UserDefinedFileAttributeView view =
+                Files.getFileAttributeView(path1, UserDefinedFileAttributeView.class);
+
+        if (!isBlocked(path)) {
+            return blockedBy;
+        }
+
         try {
-            blockedBy = (String[]) Files.getAttribute(path1, "user:blockedBy");
+            ByteBuffer buffer = ByteBuffer.allocate(view.size(name));
+            view.read(name, buffer);
+            buffer.flip();
+            String value = Charset.defaultCharset().decode(buffer).toString();
+            blockedBy = value.split(";");
+
         } catch (IOException e) {
             e.printStackTrace();
         }
