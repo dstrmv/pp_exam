@@ -19,9 +19,9 @@ public interface RemoteServer extends Remote {
     void addMessage(String message) throws RemoteException;
 
     // move
-    void copy(String fromPath, String toPath) throws RemoteException;
+    void copy(Path fromPath, Path toPath) throws RemoteException;
 
-    void move(String fromPath, String toPath) throws RemoteException;
+    void move(Path fromPath, Path toPath) throws RemoteException;
 
     boolean isDirectoryExist(String path) throws RemoteException;
 

@@ -67,9 +67,9 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public void copy(String fromPath, String toPath) throws RemoteException {
-        File from = Paths.get(fromPath).toFile();
-        File to = Paths.get(toPath).toFile();
+    public void copy(Path fromPath, Path toPath) throws RemoteException {
+        File from = fromPath.toFile();
+        File to = toPath.toFile();
 
         try {
             if (from.isDirectory()) {
@@ -84,9 +84,9 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public void move(String fromPath, String toPath) throws RemoteException {
-        File from = Paths.get(fromPath).toFile();
-        File to = Paths.get(toPath).toFile();
+    public void move(Path fromPath, Path toPath) throws RemoteException {
+        File from = fromPath.toFile();
+        File to = toPath.toFile();
 
         try {
             if (from.isDirectory()) {
@@ -150,7 +150,7 @@ public class RemoteServerImpl implements RemoteServer {
 
     }
 
-    //TODO Test
+
     @Override
     public void unblock(Path path, String user) throws RemoteException {
 

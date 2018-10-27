@@ -36,181 +36,274 @@ public class CommandExecutor {
     public String execute(String[] commands, String userName) throws RemoteException {
         switch (commands[0].toLowerCase()) {
             case "cd": {
-                if (commands.length == 1) {
-                    System.out.println(currentPath);
-                    return currentPath;
-                }
-                String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
-                newPath = combinePaths(currentPath, newPath);
-                if (!server.isDirectoryExist(newPath)) {
-                    System.out.println("path is not exist");
-                    return currentPath;
-                } else {
-                    setCurrentPath(newPath);
-                    return newPath;
-                }
+                return cd(commands);
             }
             case "md": {
-                if (commands.length == 1) {
-                    System.out.println("zero arguments");
-                    return currentPath;
-                }
-                if (commands.length > 2) {
-                    System.out.println("invalid arguments");
-                    return currentPath;
-                }
-                String path = combinePaths(currentPath, commands[1]);
-                server.makeDirectory(path);
-                server.addMessage(String.format("directory \"%s\" created by user %s", path, userName));
-                return currentPath;
+                return md(commands, userName);
             }
             case "print": {
                 System.out.println(server.getFilesTree(currentPath));
                 return currentPath;
             }
             case "rd": {
-                if (commands.length < 2) {
-                    System.out.println("\nwrong arguments");
-                    return currentPath;
-                }
-
-                String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
-                newPath = combinePaths(currentPath, newPath);
-
-
-
-                if (newPath.equals(currentPath)) {
-                    System.out.println("can't delete current directory");
-                    return currentPath;
-                }
-
-                if (server.isBlocked(Paths.get(newPath))) {
-                    System.out.println("can't delete blocked directory");
-                    return currentPath;
-                }
-
-                boolean removed = server.removeDirectoryRecursive(Paths.get(newPath));
-                if (removed) {
-                    server.addMessage(String.format("directory \"%s\" deleted by user %s", newPath, userName));
-                }
-                return currentPath;
+                return rd(commands, userName);
             }
             case "dir": {
-                if (commands.length != 1) {
-                    System.out.println("wrong arguments");
-                    return currentPath;
-                }
-
-                Arrays.stream(server.getFilesInDirectory(currentPath))
-                        .sorted()
-                        .forEachOrdered(System.out::println);
-                return currentPath;
+                return dir(commands);
             }
             case "copy": {
-
-                if (commands.length != 3) {
-                    System.out.println("wrong arguments. try to put arguments in \"\"");
-                    return currentPath;
-                }
-
-                String stringPathFrom = commands[1];
-                String stringPathTo = commands[2];
-
-                stringPathFrom = combinePaths(currentPath, stringPathFrom);
-                stringPathTo = combinePaths(currentPath, stringPathTo);
-
-                server.copy(stringPathFrom, stringPathTo);
-                return currentPath;
+                return copy(commands, userName);
             }
             case "block": {
-                if (commands.length < 2) {
-                    System.out.println("wrong arguments");
-                    return currentPath;
-                }
-
-                String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
-                newPath = combinePaths(currentPath, newPath);
-
-                server.block(Paths.get(newPath), userName);
-                server.addMessage(String.format("file \"%s\" is blocked by %s", newPath, userName));
-                return currentPath;
+                return block(commands, userName);
             }
-            case "unblock" : {
-
-                if (commands.length < 2) {
-                    System.out.println("wrong arguments");
-                    return currentPath;
-                }
-
-                String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
-                newPath = combinePaths(currentPath, newPath);
-
-                server.unblock(Paths.get(newPath), userName);
-                server.addMessage(String.format("file \"%s\" is unblocked by %s", newPath, userName));
-                return currentPath;
+            case "unblock": {
+                return unblock(commands, userName);
             }
             case "move": {
-                if (commands.length != 3) {
-                    System.out.println("wrong arguments. try to put arguments in \"\"");
-                    return currentPath;
-                }
-
-                String stringPathFrom = commands[1];
-                String stringPathTo = commands[2];
-
-                stringPathFrom = combinePaths(currentPath, stringPathFrom);
-                stringPathTo = combinePaths(currentPath, stringPathTo);
-
-                server.move(stringPathFrom, stringPathTo);
-                return currentPath;
+                return move(commands, userName);
             }
             case "deltree": {
-
-                if (commands.length < 2) {
-                    System.out.println("\nwrong arguments");
-                    return currentPath;
-                }
-
-                String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
-                newPath = combinePaths(currentPath, newPath);
-
-                if (newPath.equals(currentPath)) {
-                    System.out.println("can't delete current directory");
-                    return currentPath;
-                }
-
-                if (server.isBlocked(Paths.get(newPath))) {
-                    System.out.println("can't delete blocked directory");
-                    return currentPath;
-                }
-
-                try {
-                    if (Files.walk(Paths.get(newPath)).anyMatch(x -> {
-                        try {
-                            return server.isBlocked(x);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
-                        return false;
-                    })) {
-                        System.out.println("directory contains blocked file");
-                        return currentPath;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                boolean removed = server.removeDirectoryRecursive(Paths.get(newPath));
-                if (removed) {
-                    server.addMessage(String.format("directory \"%s\" deleted by user %s", newPath, userName));
-                }
-                return currentPath;
+                return deltree(commands, userName);
             }
-
-
-
+            case "mf": {
+                return mf(commands, userName);
+            }
+            case "del": {
+                return del(commands, userName);
+            }
         }
         return currentPath;
+    }
+
+    private String del(String[] commands, String userName) throws RemoteException {
+        if (commands.length < 2) {
+            System.out.println("\nwrong arguments");
+            return currentPath;
+        }
+
+        String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
+        newPath = combinePaths(currentPath, newPath);
+
+        if (newPath.equals(currentPath)) {
+            System.out.println("can't delete current directory");
+            return currentPath;
+        }
+
+        if (server.isBlocked(Paths.get(newPath))) {
+            System.out.println("can't delete blocked directory");
+            return currentPath;
+        }
+
+        server.makeFile(Paths.get(newPath));
+        server.addMessage(String.format("file \"%s\" created by user %s", newPath, userName));
+        return currentPath;
+    }
+
+    private String mf(String[] commands, String userName) throws RemoteException {
+        if (commands.length == 1) {
+            System.out.println("zero arguments");
+            return currentPath;
+        }
+        if (commands.length > 2) {
+            System.out.println("invalid arguments");
+            return currentPath;
+        }
+        String path = combinePaths(currentPath, commands[1]);
+        server.makeFile(Paths.get(path));
+        server.addMessage(String.format("file \"%s\" created by user %s", path, userName));
+        return currentPath;
+    }
+
+    private String deltree(String[] commands, String userName) throws RemoteException {
+
+        if (commands.length < 2) {
+            System.out.println("\nwrong arguments");
+            return currentPath;
+        }
+
+        String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
+        newPath = combinePaths(currentPath, newPath);
+
+        if (newPath.equals(currentPath)) {
+            System.out.println("can't delete current directory");
+            return currentPath;
+        }
+
+        if (server.isBlocked(Paths.get(newPath))) {
+            System.out.println("can't delete blocked directory");
+            return currentPath;
+        }
+
+        if (containsBlockedFile(newPath)) {
+            System.out.println("directory contains blocked file");
+            return currentPath;
+        }
+
+        boolean removed = server.removeDirectoryRecursive(Paths.get(newPath));
+        if (removed) {
+            server.addMessage(String.format("directory \"%s\" deleted by user %s", newPath, userName));
+        }
+        return currentPath;
+    }
+
+    private boolean containsBlockedFile(String newPath) {
+        try {
+            if (Files.walk(Paths.get(newPath)).anyMatch(x -> {
+                try {
+                    return server.isBlocked(x);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+                return false;
+            })) {
+                return true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private String move(String[] commands, String userName) throws RemoteException {
+        if (commands.length != 3) {
+            System.out.println("wrong arguments. try to put arguments in \"\"");
+            return currentPath;
+        }
+
+        String stringPathFrom = commands[1];
+        String stringPathTo = commands[2];
+
+        stringPathFrom = combinePaths(currentPath, stringPathFrom);
+        stringPathTo = combinePaths(currentPath, stringPathTo);
+
+        if (containsBlockedFile(stringPathFrom)) {
+            System.out.println("directory contains blocked file");
+            return currentPath;
+        }
+
+        server.move(Paths.get(stringPathFrom), Paths.get(stringPathTo));
+        server.addMessage(String.format("user %s moved \"%s\" to \"%s\"", userName, stringPathFrom, stringPathTo));
+        return currentPath;
+    }
+
+    private String unblock(String[] commands, String userName) throws RemoteException {
+        if (commands.length < 2) {
+            System.out.println("wrong arguments");
+            return currentPath;
+        }
+
+        String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
+        newPath = combinePaths(currentPath, newPath);
+
+        server.unblock(Paths.get(newPath), userName);
+        server.addMessage(String.format("file \"%s\" is unblocked by %s", newPath, userName));
+        return currentPath;
+    }
+
+    private String block(String[] commands, String userName) throws RemoteException {
+        if (commands.length < 2) {
+            System.out.println("wrong arguments");
+            return currentPath;
+        }
+
+        String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
+        newPath = combinePaths(currentPath, newPath);
+
+        server.block(Paths.get(newPath), userName);
+        server.addMessage(String.format("file \"%s\" is blocked by %s", newPath, userName));
+        return currentPath;
+    }
+
+    private String dir(String[] commands) throws RemoteException {
+        if (commands.length != 1) {
+            System.out.println("wrong arguments");
+            return currentPath;
+        }
+
+        Arrays.stream(server.getFilesInDirectory(currentPath))
+                .sorted()
+                .forEachOrdered(System.out::println);
+        return currentPath;
+    }
+
+    private String copy(String[] commands, String userName) throws RemoteException {
+        if (commands.length != 3) {
+            System.out.println("wrong arguments. try to put arguments in \"\"");
+            return currentPath;
+        }
+
+        String stringPathFrom = commands[1];
+        String stringPathTo = commands[2];
+
+        stringPathFrom = combinePaths(currentPath, stringPathFrom);
+        stringPathTo = combinePaths(currentPath, stringPathTo);
+
+        if (containsBlockedFile(stringPathFrom)) {
+            System.out.println("directory contains blocked file");
+            return currentPath;
+        }
+
+        server.copy(Paths.get(stringPathFrom), Paths.get(stringPathTo));
+        server.addMessage(String.format("user %s copied \"%s\" to \"%s\"", userName, stringPathFrom, stringPathTo));
+        return currentPath;
+    }
+
+    private String rd(String[] commands, String userName) throws RemoteException {
+        if (commands.length < 2) {
+            System.out.println("\nwrong arguments");
+            return currentPath;
+        }
+
+        String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
+        newPath = combinePaths(currentPath, newPath);
+
+        if (newPath.equals(currentPath)) {
+            System.out.println("can't delete current directory");
+            return currentPath;
+        }
+
+        if (server.isBlocked(Paths.get(newPath))) {
+            System.out.println("can't delete blocked directory");
+            return currentPath;
+        }
+
+        boolean removed = server.removeDirectory(Paths.get(newPath));
+        if (removed) {
+            server.addMessage(String.format("directory \"%s\" deleted by user %s", newPath, userName));
+        }
+        return currentPath;
+    }
+
+    private String md(String[] commands, String userName) throws RemoteException {
+        if (commands.length == 1) {
+            System.out.println("zero arguments");
+            return currentPath;
+        }
+        if (commands.length > 2) {
+            System.out.println("invalid arguments");
+            return currentPath;
+        }
+        String path = combinePaths(currentPath, commands[1]);
+        server.makeDirectory(path);
+        server.addMessage(String.format("directory \"%s\" created by user %s", path, userName));
+        return currentPath;
+    }
+
+    private String cd(String[] commands) throws RemoteException {
+        if (commands.length == 1) {
+            System.out.println(currentPath);
+            return currentPath;
+        }
+        String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
+        newPath = combinePaths(currentPath, newPath);
+        if (!server.isDirectoryExist(newPath)) {
+            System.out.println("path is not exist");
+            return currentPath;
+        } else {
+            setCurrentPath(newPath);
+            return newPath;
+        }
     }
 
     private String combinePaths(String currentPath, String newPath) {
