@@ -19,36 +19,36 @@ public interface RemoteServer extends Remote {
     void addMessage(String message) throws RemoteException;
 
     // move
-    void copy(Path fromPath, Path toPath) throws RemoteException;
+    void copy(String fromPathStr, String toPathStr) throws RemoteException;
 
-    void move(Path fromPath, Path toPath) throws RemoteException;
+    void move(String fromPathStr, String toPathStr) throws RemoteException;
 
-    boolean isDirectoryExist(String path) throws RemoteException;
+    boolean isDirectoryExist(String pathStr) throws RemoteException;
 
     // md
-    void makeDirectory(String path) throws RemoteException;
+    void makeDirectory(String pathStr) throws RemoteException;
 
     // lock
-    void block(Path path, String username) throws RemoteException;
+    void block(String pathStr, String username) throws RemoteException;
 
     //unlock
-    void unblock(Path path, String user) throws RemoteException;
+    void unblock(String pathStr, String user) throws RemoteException;
 
-    boolean isBlocked(Path path) throws RemoteException;
+    boolean isBlocked(String pathStr) throws RemoteException;
 
-    String[] blockedBy(Path path) throws RemoteException;
+    String[] blockedBy(String pathStr) throws RemoteException;
 
     // rd
-    boolean removeDirectory(Path path) throws RemoteException;
+    boolean removeDirectory(String pathStr) throws RemoteException;
 
     //deltree
-    boolean removeDirectoryRecursive(Path path) throws RemoteException;
+    boolean removeDirectoryRecursive(String pathStr) throws RemoteException;
 
     // del
-    void removeFile(Path path) throws RemoteException;
+    void removeFile(String pathStr) throws RemoteException;
 
     // mf
-    void makeFile(Path path) throws RemoteException;
+    void makeFile(String pathStr) throws RemoteException;
 
     String getDelimiter() throws RemoteException;
 

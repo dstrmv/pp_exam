@@ -67,9 +67,9 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public void copy(Path fromPath, Path toPath) throws RemoteException {
-        File from = fromPath.toFile();
-        File to = toPath.toFile();
+    public void copy(String fromPathStr, String toPathStr) throws RemoteException {
+        File from = Paths.get(fromPathStr).toFile();
+        File to = Paths.get(toPathStr).toFile();
 
         try {
             if (from.isDirectory()) {
@@ -84,9 +84,9 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public void move(Path fromPath, Path toPath) throws RemoteException {
-        File from = fromPath.toFile();
-        File to = toPath.toFile();
+    public void move(String fromPathStr, String toPathStr) throws RemoteException {
+        File from = Paths.get(fromPathStr).toFile();
+        File to = Paths.get(toPathStr).toFile();
 
         try {
             if (from.isDirectory()) {
@@ -114,18 +114,19 @@ public class RemoteServerImpl implements RemoteServer {
         }
     }
 
-    //TODO
-    @Override
-    public void block(Path path, String username) throws RemoteException {
 
-        boolean blocked = isBlocked(path);
+    @Override
+    public void block(String pathStr, String username) throws RemoteException {
+
+        Path path = Paths.get(pathStr);
+        boolean blocked = isBlocked(pathStr);
 
         UserDefinedFileAttributeView view =
                 Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
 
         if (blocked) {
             try {
-                String[] blockedBy = blockedBy(path);
+                String[] blockedBy = blockedBy(pathStr);
                 if (Arrays.asList(blockedBy).contains(username)) {
                     return;
                 }
@@ -152,16 +153,17 @@ public class RemoteServerImpl implements RemoteServer {
 
 
     @Override
-    public void unblock(Path path, String user) throws RemoteException {
+    public void unblock(String pathStr, String user) throws RemoteException {
 
-        boolean blocked = isBlocked(path);
+        Path path = Paths.get(pathStr);
+        boolean blocked = isBlocked(path.toString());
 
         UserDefinedFileAttributeView view =
                 Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
 
         if (blocked) {
             try {
-                String[] blockedBy = blockedBy(path);
+                String[] blockedBy = blockedBy(pathStr);
                 String[] newBlockedBy = Arrays.stream(blockedBy).filter(userattr -> !user.equals(userattr)).toArray(String[]::new);
 
                 if (newBlockedBy.length == 0) {
@@ -181,21 +183,22 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public boolean isBlocked(Path path) throws RemoteException {
+    public boolean isBlocked(String pathStr) throws RemoteException {
 
+        Path path = Paths.get(pathStr);
         boolean blocked = false;
-        String name = "user.blocked";
+        String attrName = "user.blocked";
 
         UserDefinedFileAttributeView view =
                 Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
         try {
 
-            if (!view.list().contains("user.blocked")) {
+            if (!view.list().contains(attrName)) {
                 return false;
             }
 
-            ByteBuffer buffer = ByteBuffer.allocate(view.size(name));
-            view.read(name, buffer);
+            ByteBuffer buffer = ByteBuffer.allocate(view.size(attrName));
+            view.read(attrName, buffer);
             buffer.flip();
             String value = Charset.defaultCharset().decode(buffer).toString();
             if (value.equals("true")) {
@@ -209,18 +212,20 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public String[] blockedBy(Path path) throws RemoteException {
+    public String[] blockedBy(String pathStr) throws RemoteException {
 
+        Path path = Paths.get(pathStr);
         String[] blockedBy = {};
 
-        String name = "user.blockedBy";
+        String attrName = "user.blockedBy";
 
+        //this uses for user defined file attributes
         UserDefinedFileAttributeView view =
                 Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
 
         try {
-            ByteBuffer buffer = ByteBuffer.allocate(view.size(name));
-            view.read(name, buffer);
+            ByteBuffer buffer = ByteBuffer.allocate(view.size(attrName));
+            view.read(attrName, buffer);
             buffer.flip();
             String value = Charset.defaultCharset().decode(buffer).toString();
             blockedBy = value.split(";");
@@ -232,10 +237,12 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public boolean removeDirectory(Path path) throws RemoteException {
+    public boolean removeDirectory(String pathStr) throws RemoteException {
+
+        Path path = Paths.get(pathStr);
 
         if (Files.exists(path) && Files.isDirectory(path)) {
-            if (!isBlocked(path)) {
+            if (!isBlocked(pathStr)) {
                 if (path.toFile().list().length == 0) {
                     try {
                         Files.delete(path);
@@ -256,10 +263,12 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public boolean removeDirectoryRecursive(Path path) throws RemoteException {
+    public boolean removeDirectoryRecursive(String pathStr) throws RemoteException {
+
+        Path path = Paths.get(pathStr);
 
         if (Files.exists(path) && Files.isDirectory(path)) {
-            if (!isBlocked(path)) {
+            if (!isBlocked(pathStr)) {
                 if (path.toFile().list().length == 0) {
                     try {
                         FileUtils.deleteDirectory(path.toFile());
@@ -275,13 +284,14 @@ public class RemoteServerImpl implements RemoteServer {
     }
 
     @Override
-    public void removeFile(Path path) throws RemoteException {
+    public void removeFile(String pathStr) throws RemoteException {
 
     }
 
     @Override
-    public void makeFile(Path path) throws RemoteException {
+    public void makeFile(String pathStr) throws RemoteException {
         try {
+            Path path = Paths.get(pathStr);
             Files.createFile(path);
         } catch (IOException e) {
             throw new RemoteException("IOException");
@@ -308,8 +318,8 @@ public class RemoteServerImpl implements RemoteServer {
         sb.append("-");
         sb.append(folder.getName());
         sb.append(File.separator);
-        if (isBlocked(folder.toPath())) {
-            sb.append(" ").append("LOCKED BY: ").append(Arrays.toString(this.blockedBy(folder.toPath())));
+        if (isBlocked(folder.getAbsolutePath())) {
+            sb.append(" ").append("LOCKED BY: ").append(Arrays.toString(this.blockedBy(folder.getAbsolutePath())));
         }
         sb.append("\n");
         for (File file : folder.listFiles()) {
@@ -325,8 +335,8 @@ public class RemoteServerImpl implements RemoteServer {
         sb.append(getIndentString(indent));
         sb.append("-");
         sb.append(file.getName());
-        if (isBlocked(file.toPath())) {
-            sb.append(" ").append("LOCKED BY: ").append(Arrays.toString(this.blockedBy(file.toPath())));
+        if (isBlocked(file.getAbsolutePath())) {
+            sb.append(" ").append("LOCKED BY: ").append(Arrays.toString(this.blockedBy(file.getAbsolutePath())));
         }
         sb.append("\n");
     }
