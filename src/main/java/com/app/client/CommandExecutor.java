@@ -90,13 +90,13 @@ public class CommandExecutor {
             return currentPath;
         }
 
-        if (server.isBlocked(Paths.get(newPath))) {
+        if (server.isBlocked(newPath)) {
             System.out.println("can't delete blocked directory");
             return currentPath;
         }
 
-        server.makeFile(Paths.get(newPath));
-        server.addMessage(String.format("file \"%s\" created by user %s", newPath, userName));
+        server.removeFile(newPath);
+        server.addMessage(String.format("file \"%s\" deleted by user %s", newPath, userName));
         return currentPath;
     }
 
@@ -110,7 +110,7 @@ public class CommandExecutor {
             return currentPath;
         }
         String path = combinePaths(currentPath, commands[1]);
-        server.makeFile(Paths.get(path));
+        server.makeFile(path);
         server.addMessage(String.format("file \"%s\" created by user %s", path, userName));
         return currentPath;
     }
@@ -130,7 +130,7 @@ public class CommandExecutor {
             return currentPath;
         }
 
-        if (server.isBlocked(Paths.get(newPath))) {
+        if (server.isBlocked(newPath)) {
             System.out.println("can't delete blocked directory");
             return currentPath;
         }
@@ -140,7 +140,7 @@ public class CommandExecutor {
             return currentPath;
         }
 
-        boolean removed = server.removeDirectoryRecursive(Paths.get(newPath));
+        boolean removed = server.removeDirectoryRecursive(newPath);
         if (removed) {
             server.addMessage(String.format("directory \"%s\" deleted by user %s", newPath, userName));
         }
@@ -151,7 +151,7 @@ public class CommandExecutor {
         try {
             if (Files.walk(Paths.get(newPath)).anyMatch(x -> {
                 try {
-                    return server.isBlocked(x);
+                    return server.isBlocked(x.toString());
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -182,7 +182,7 @@ public class CommandExecutor {
             return currentPath;
         }
 
-        server.move(Paths.get(stringPathFrom), Paths.get(stringPathTo));
+        server.move(stringPathFrom, stringPathTo);
         server.addMessage(String.format("user %s moved \"%s\" to \"%s\"", userName, stringPathFrom, stringPathTo));
         return currentPath;
     }
@@ -196,7 +196,7 @@ public class CommandExecutor {
         String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
         newPath = combinePaths(currentPath, newPath);
 
-        server.unblock(Paths.get(newPath), userName);
+        server.unblock(newPath, userName);
         server.addMessage(String.format("file \"%s\" is unblocked by %s", newPath, userName));
         return currentPath;
     }
@@ -210,7 +210,7 @@ public class CommandExecutor {
         String newPath = Arrays.stream(commands).skip(1).reduce((x, y) -> x + " " + y).get();
         newPath = combinePaths(currentPath, newPath);
 
-        server.block(Paths.get(newPath), userName);
+        server.block(newPath, userName);
         server.addMessage(String.format("file \"%s\" is blocked by %s", newPath, userName));
         return currentPath;
     }
@@ -244,7 +244,7 @@ public class CommandExecutor {
             return currentPath;
         }
 
-        server.copy(Paths.get(stringPathFrom), Paths.get(stringPathTo));
+        server.copy(stringPathFrom, stringPathTo);
         server.addMessage(String.format("user %s copied \"%s\" to \"%s\"", userName, stringPathFrom, stringPathTo));
         return currentPath;
     }
@@ -263,12 +263,12 @@ public class CommandExecutor {
             return currentPath;
         }
 
-        if (server.isBlocked(Paths.get(newPath))) {
+        if (server.isBlocked(newPath)) {
             System.out.println("can't delete blocked directory");
             return currentPath;
         }
 
-        boolean removed = server.removeDirectory(Paths.get(newPath));
+        boolean removed = server.removeDirectory(newPath);
         if (removed) {
             server.addMessage(String.format("directory \"%s\" deleted by user %s", newPath, userName));
         }

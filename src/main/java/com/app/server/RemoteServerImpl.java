@@ -3,6 +3,7 @@ package com.app.server;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -285,6 +286,18 @@ public class RemoteServerImpl implements RemoteServer {
 
     @Override
     public void removeFile(String pathStr) throws RemoteException {
+
+        Path path = Paths.get(pathStr);
+
+        if (isBlocked(pathStr)) {
+            throw new RemoteException("file is blocked");
+        }
+
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            throw new RemoteException("can't delete");
+        }
 
     }
 
