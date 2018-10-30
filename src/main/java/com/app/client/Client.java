@@ -34,12 +34,21 @@ public class Client implements Runnable {
 
             String connectionInputMessage = in.nextLine();
             String[] args = Parser.parse(connectionInputMessage);
+            String command, address;
+            String userName;
+            int port;
 
-            String command = args[0];
-            String[] addressPort = args[1].split(":");
-            String address = addressPort[0];
-            int port = Integer.parseInt(addressPort[1]);
-            String userName = args[2];
+            try {
+                command = args[0];
+                String[] addressPort = args[1].split(":");
+                address = addressPort[0];
+                port = Integer.parseInt(addressPort[1]);
+                userName = args[2];
+
+            } catch (NullPointerException e) {
+                System.out.println("some parameter is missing...");
+                continue;
+            }
 
             if (!userName.matches("[a-zA-Z]+")) {
                 System.out.println("username must contain only english letters");
@@ -58,12 +67,12 @@ public class Client implements Runnable {
                 server = connector.connect(address, port, "server");
                 if (!server.containsUser(userName)) {
                     server.addUser(userName);
-
                 } else {
-                    throw new Exception("user already added");
+                    System.out.println("user already added. pls enter another user name");
+                    continue;
                 }
 
-                Runtime.getRuntime().addShutdownHook(new Thread( () -> {
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                     try {
                         server.removeUser(userName);
                     } catch (RemoteException e) {

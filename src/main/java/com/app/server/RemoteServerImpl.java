@@ -220,7 +220,7 @@ public class RemoteServerImpl implements RemoteServer {
 
         String attrName = "user.blockedBy";
 
-        //this uses for user defined file attributes
+        //this for user defined file attributes
         UserDefinedFileAttributeView view =
                 Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
 
