@@ -45,7 +45,7 @@ public class Client implements Runnable {
                 port = Integer.parseInt(addressPort[1]);
                 userName = args[2];
 
-            } catch (NullPointerException e) {
+            } catch (NullPointerException | ArrayIndexOutOfBoundsException e) {
                 System.out.println("some parameter is missing...");
                 continue;
             }
