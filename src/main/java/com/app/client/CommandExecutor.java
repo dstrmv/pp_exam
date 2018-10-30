@@ -308,7 +308,7 @@ public class CommandExecutor {
 
     private String combinePaths(String currentPath, String newPath) {
         String combined = newPath;
-        if (Arrays.stream(listRoots).noneMatch(newPath::startsWith)) {
+        if (Arrays.stream(listRoots).map(String::toLowerCase).noneMatch(p -> newPath.toLowerCase().startsWith(p))) {
             try {
                 combined = currentPath + server.getDelimiter() + newPath;
             } catch (RemoteException e) {
