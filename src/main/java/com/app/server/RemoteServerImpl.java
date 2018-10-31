@@ -7,10 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.file.CopyOption;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.rmi.RemoteException;
 import java.util.*;
@@ -205,6 +202,8 @@ public class RemoteServerImpl implements RemoteServer {
             if (value.equals("true")) {
                 blocked = true;
             }
+        } catch (FileSystemException e) {
+            return false;
         } catch (IOException e) {
             throw new RemoteException("123", e);
         }
@@ -320,6 +319,7 @@ public class RemoteServerImpl implements RemoteServer {
         int indent = 0;
         StringBuilder sb = new StringBuilder();
         printDirectoryTree(folder, indent, sb);
+
         return sb.toString();
     }
 
@@ -335,6 +335,11 @@ public class RemoteServerImpl implements RemoteServer {
             sb.append(" ").append("LOCKED BY: ").append(Arrays.toString(this.blockedBy(folder.getAbsolutePath())));
         }
         sb.append("\n");
+
+        if (folder.listFiles() == null) {
+            return;
+        }
+
         for (File file : folder.listFiles()) {
             if (file.isDirectory()) {
                 printDirectoryTree(file, indent + 1, sb);
